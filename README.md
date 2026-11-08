@@ -132,4 +132,4 @@ python -m unittest discover -s tests -p "test_*.py"
 ## Academic Citation & Supervision
 - **Project Supervisor:** S. O. Titiloye
 - **Department:** Department of Computer Science, Faculty of Computing, University of Ibadan
-- **Session:** 2024/2025 Academic Session
+- **Session:** 2025/2026 Academic Session
