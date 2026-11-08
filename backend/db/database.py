@@ -3,8 +3,9 @@ from typing import Generator
 from backend.config import SQLITE_DB_PATH
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode = WAL;")
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
@@ -12,16 +13,52 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # 0. User Profiles (Any Lecturer or Student from any Department & Institution)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        user_id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        role TEXT NOT NULL,
+        department TEXT NOT NULL,
+        institution TEXT NOT NULL,
+        level TEXT,
+        title TEXT,
+        picture TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
     # 1. Courses
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS courses (
         course_id TEXT PRIMARY KEY,
         course_code TEXT NOT NULL UNIQUE,
         course_title TEXT NOT NULL,
-        department TEXT NOT NULL DEFAULT 'Computer Science',
+        department TEXT NOT NULL DEFAULT 'General Studies',
         level INTEGER NOT NULL,
         semester TEXT NOT NULL,
-        credit_units INTEGER NOT NULL DEFAULT 3
+        credit_units INTEGER NOT NULL DEFAULT 3,
+        lecturer_id TEXT,
+        FOREIGN KEY (lecturer_id) REFERENCES users (user_id) ON DELETE SET NULL
+    );
+    """)
+
+    try:
+        cursor.execute("ALTER TABLE courses ADD COLUMN lecturer_id TEXT REFERENCES users(user_id);")
+    except Exception:
+        pass
+
+    # 1b. Documents (Official Past Questions, Marking Schemes, Lecture Notes, Handouts)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS documents (
+        id TEXT PRIMARY KEY,
+        course_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        file_url TEXT NOT NULL,
+        doc_type TEXT NOT NULL, -- 'marking_scheme' | 'past_question' | 'lecture_note' | 'handout'
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses (course_id) ON DELETE CASCADE
     );
     """)
 
@@ -60,9 +97,15 @@ def init_db():
         chunk_text TEXT NOT NULL,
         token_count INTEGER NOT NULL,
         embedding_id TEXT NOT NULL,
+        page_number INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (document_id) REFERENCES examination_documents (document_id) ON DELETE CASCADE
     );
     """)
+
+    try:
+        cursor.execute("ALTER TABLE document_chunks ADD COLUMN page_number INTEGER DEFAULT 1;")
+    except Exception:
+        pass
 
     # 5. Past Questions
     cursor.execute("""
@@ -134,6 +177,42 @@ def init_db():
         last_session_appeared TEXT NOT NULL,
         overdue_probability REAL NOT NULL DEFAULT 0.5,
         FOREIGN KEY (course_id) REFERENCES courses (course_id) ON DELETE CASCADE
+    );
+    """)
+
+    # 10. Lecturer Feedback Loop & Calibration Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS lecturer_feedback (
+        feedback_id TEXT PRIMARY KEY,
+        lecturer_email TEXT NOT NULL,
+        lecturer_name TEXT,
+        course_code TEXT NOT NULL,
+        target_type TEXT NOT NULL, -- 'qa_answer', 'evaluation_record', 'rubric_criteria'
+        target_id TEXT,
+        query_text TEXT,
+        ai_response TEXT,
+        rating INTEGER NOT NULL DEFAULT 5, -- 1-5 stars
+        faithfulness_score REAL DEFAULT 1.0,
+        is_hallucination BOOLEAN DEFAULT 0,
+        feedback_notes TEXT,
+        corrected_answer TEXT, -- Lecturer's gold-standard exemplar
+        status TEXT NOT NULL DEFAULT 'approved', -- 'pending', 'approved', 'calibrated', 'flagged'
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    # 11. Anti-Hallucination Guardrail Logs & Audit Trail Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS guardrail_logs (
+        log_id TEXT PRIMARY KEY,
+        query_text TEXT NOT NULL,
+        course_code TEXT,
+        retrieved_chunks_count INTEGER NOT NULL,
+        max_similarity REAL NOT NULL,
+        faithfulness_score REAL NOT NULL,
+        hallucination_risk TEXT NOT NULL, -- 'LOW_RISK', 'MODERATE_RISK', 'HIGH_RISK'
+        guardrail_action TEXT NOT NULL, -- 'ALLOWED', 'CITATION_ATTACHED', 'REFUSAL_ENFORCED', 'FLAGGED'
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
 

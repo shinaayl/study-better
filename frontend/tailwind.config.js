@@ -8,13 +8,25 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          500: '#0284c7',
-          600: '#0369a1',
-          700: '#075985',
-          800: '#0c4a6e',
-          900: '#082f49',
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          300: '#c4b5fd',
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          600: '#7c3aed',
+          700: '#6d28d9',
+          800: '#5b21b6',
+          900: '#4c1d95',
+          950: '#2e1065',
+        },
+        univ: {
+          purple: '#6b21a8',
+          deep: '#581c87',
+          light: '#f5f3ff',
+          lavender: '#faf5ff',
+          border: '#e9d5ff',
+          accent: '#7c3aed',
         },
         uiGreen: {
           50: '#f0fdf4',

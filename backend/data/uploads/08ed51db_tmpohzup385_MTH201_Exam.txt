@@ -1,0 +1,10 @@
+MTH 201 LINEAR ALGEBRA 2023/2024 SESSION
+QUESTION 1 (10 marks)
+Define the null space and range of a linear transformation T: V -> W.
+Marking Criteria:
+Definition of null space kernel with vector elements (5 marks)
+Definition of range image subspace (5 marks)
+
+--- Page 2 ---
+QUESTION 2 (10 marks)
+State the Rank-Nullity Theorem and calculate dimension.

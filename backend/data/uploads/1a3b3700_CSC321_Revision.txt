@@ -1,0 +1,5 @@
+CSC 321 Question 1 (10 marks)
+Define virtual memory.
+Marking Criteria:
+Virtual address space (5 marks)
+Page tables (5 marks)

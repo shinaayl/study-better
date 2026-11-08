@@ -36,16 +36,30 @@ TOPIC_KEYWORDS = {
     "Bioinformatics & Sequence Alignment": ["alignment", "dna", "rna", "sequence", "fasta", "blast", "bioinformatics", "genome"]
 }
 
-def detect_topic(text: str) -> str:
+def detect_topic(text: str, course_code: str = "") -> str:
     text_lower = text.lower()
-    best_topic = "General Computer Science Principles"
     max_score = 0
+    best_topic = None
     for topic, keywords in TOPIC_KEYWORDS.items():
         score = sum(1 for kw in keywords if kw in text_lower)
         if score > max_score:
             max_score = score
             best_topic = topic
-    return best_topic
+    if best_topic and max_score >= 1:
+        return best_topic
+
+    # Extract topic from question heading or prominent nouns
+    topic_match = re.search(r"(?:topic|concept|section|module|unit)\s*[:\-]\s*([^\n\.,;]+)", text, re.IGNORECASE)
+    if topic_match:
+        return topic_match.group(1).strip().title()
+
+    words = re.findall(r"\b[A-Za-z]{4,}\b", text[:250])
+    stopwords = {"this", "that", "with", "from", "each", "have", "been", "which", "marks", "question", "describe", "explain", "state", "discuss", "answer", "define", "what", "which", "where"}
+    sig_words = [w.title() for w in words if w.lower() not in stopwords]
+    if sig_words:
+        return " & ".join(sig_words[:2]) + " Concepts"
+
+    return f"{course_code or 'General'} Study Topics"
 
 def detect_bloom_level(text: str) -> str:
     text_lower = text.lower()
@@ -92,7 +106,21 @@ def extract_doc_binary_text(file_path: str) -> str:
     cleaned = [s for s in extracted if len(s) > 3 and not s.startswith("Microsoft")]
     return "\n".join(cleaned)
 
-def parse_examination_document(file_path: str) -> Dict[str, Any]:
+def extract_pdf_text(file_path: str) -> str:
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(file_path)
+        content = []
+        for page in reader.pages:
+            t = page.extract_text()
+            if t:
+                content.append(t.strip())
+        return "\n\n".join(content)
+    except Exception:
+        return ""
+
+def parse_examination_document(file_path: str, metadata_override: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    metadata_override = metadata_override or {}
     filename = os.path.basename(file_path)
     file_size = os.path.getsize(file_path)
     
@@ -100,38 +128,89 @@ def parse_examination_document(file_path: str) -> Dict[str, Any]:
         raw_text = extract_docx_text(file_path)
     elif filename.lower().endswith(".doc"):
         raw_text = extract_doc_binary_text(file_path)
+    elif filename.lower().endswith(".pdf"):
+        raw_text = extract_pdf_text(file_path)
     else:
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             raw_text = f.read()
 
     # 1. Course Code Detection
-    course_code = None
-    # Check filename first
-    fn_match = re.search(r"csc\s*(\d{3})", filename, re.IGNORECASE)
-    if fn_match:
-        course_code = f"CSC {fn_match.group(1)}"
-    else:
-        text_match = re.search(r"csc\s*(\d{3})", raw_text[:1000], re.IGNORECASE)
-        if text_match:
-            course_code = f"CSC {text_match.group(1)}"
+    course_code = metadata_override.get("course_code")
+    if not course_code:
+        # Check filename first
+        fn_match = re.search(r"\b([A-Za-z]{2,5})\s*([0-9]{3,4}[A-Za-z]?)\b", filename)
+        if fn_match:
+            course_code = f"{fn_match.group(1).upper()} {fn_match.group(2).upper()}"
         else:
-            course_code = "CSC 321"
+            text_match = re.search(r"\b([A-Za-z]{2,5})\s*([0-9]{3,4}[A-Za-z]?)\b", raw_text[:1200])
+            if text_match:
+                course_code = f"{text_match.group(1).upper()} {text_match.group(2).upper()}"
+            else:
+                course_code = "CSC 321"
+
+    course_code = course_code.strip().upper()
+
+    # Detect level from digits if not provided
+    num_match = re.search(r"\d+", course_code)
+    inferred_level = 300
+    if num_match:
+        digits = num_match.group(0)
+        if len(digits) >= 1:
+            first_digit = int(digits[0])
+            inferred_level = first_digit * 100 if first_digit > 0 else 100
+
+    # Detect department
+    department = metadata_override.get("department")
+    if not department:
+        dept_match = re.search(r"department of ([A-Za-z\s]+?)(?:,|\n|\r|faculty)", raw_text[:1500], re.IGNORECASE)
+        if dept_match:
+            department = dept_match.group(1).strip().title()
+        elif course_code.startswith("CSC"):
+            department = "Computer Science"
+        elif course_code.startswith("MAT"):
+            department = "Mathematics"
+        elif course_code.startswith("PHY"):
+            department = "Physics"
+        elif course_code.startswith("CHE"):
+            department = "Chemistry"
+        elif course_code.startswith("ECO"):
+            department = "Economics"
+        elif course_code.startswith("LAW"):
+            department = "Law"
+        elif course_code.startswith("MEE"):
+            department = "Mechanical Engineering"
+        else:
+            department = "Academic Department"
 
     meta = COURSE_METADATA_MAP.get(course_code, {
-        "title": f"{course_code} Core Principles",
-        "level": 300,
-        "semester": "First Semester",
-        "units": 3
+        "title": metadata_override.get("course_title") or f"{course_code} Course & Exam Study Guide",
+        "level": metadata_override.get("level") or inferred_level,
+        "semester": metadata_override.get("semester") or "First Semester",
+        "units": metadata_override.get("credit_units") or 3,
+        "department": department
     })
+    if metadata_override.get("course_title"):
+        meta["title"] = metadata_override["course_title"]
+    if metadata_override.get("level"):
+        meta["level"] = int(metadata_override["level"])
+    if metadata_override.get("semester"):
+        meta["semester"] = metadata_override["semester"]
+    if metadata_override.get("credit_units"):
+        meta["units"] = int(metadata_override["credit_units"])
+    meta["department"] = metadata_override.get("department") or meta.get("department", department)
 
     # 2. Session detection
-    sess_match = re.search(r"(\d{4}\s*[/_-]\s*\d{4})", raw_text[:1500])
-    session_year = sess_match.group(1).replace("-", "/").replace("_", "/").strip() if sess_match else "2022/2023"
+    session_year = metadata_override.get("session")
+    if not session_year:
+        sess_match = re.search(r"(\d{4}\s*[/_-]\s*\d{4})", raw_text[:1500])
+        session_year = sess_match.group(1).replace("-", "/").replace("_", "/").strip() if sess_match else "2023/2024"
 
     # 3. Document Type
-    is_marking_scheme = bool(re.search(r"marking\s*(?:guide|scheme|quide)|ms", filename, re.IGNORECASE) or 
-                            re.search(r"marking\s*(?:guide|scheme|quide)", raw_text[:500], re.IGNORECASE))
-    doc_type = "marking_scheme" if is_marking_scheme else "past_examination_paper"
+    doc_type = metadata_override.get("document_type")
+    if not doc_type:
+        is_marking_scheme = bool(re.search(r"marking\s*(?:guide|scheme|quide)|ms", filename, re.IGNORECASE) or 
+                                re.search(r"marking\s*(?:guide|scheme|quide)", raw_text[:500], re.IGNORECASE))
+        doc_type = "marking_scheme" if is_marking_scheme else "past_examination_paper"
 
     # 4. Extract Questions and Criteria
     questions = []
@@ -191,30 +270,50 @@ def parse_examination_document(file_path: str) -> Dict[str, Any]:
         })
         q_index += 1
 
-    # 5. Semantic Document Chunking
-    chunks = []
-    # 350-word sliding window chunking with 50-word overlap
-    words = raw_text.split()
-    chunk_size = 350
-    overlap = 50
-    start = 0
-    c_idx = 0
-    while start < len(words):
-        chunk_words = words[start:start + chunk_size]
-        chunk_str = " ".join(chunk_words)
-        chunks.append({
-            "chunk_index": c_idx,
-            "chunk_text": chunk_str,
-            "token_count": len(chunk_words)
-        })
-        start += (chunk_size - overlap)
-        c_idx += 1
+    # 5. Semantic Document Chunking (Exact 800 tokens, 150 token overlap with page awareness)
+    try:
+        from backend.pipeline.chunker import extract_pages, chunk_text_overlapping
+        pages = extract_pages(file_path)
+        chunks = chunk_text_overlapping(
+            pages,
+            chunk_size=800,
+            overlap=150,
+            metadata_base={
+                "course_code": course_code,
+                "course_id": course_code,
+                "document_title": filename,
+                "doc_type": doc_type,
+                "year": session_year,
+                "department": meta.get("department", "Computer Science")
+            }
+        )
+    except Exception as e:
+        words = raw_text.split()
+        chunk_size = 800
+        overlap = 150
+        start = 0
+        c_idx = 0
+        chunks = []
+        while start < len(words):
+            chunk_words = words[start:start + chunk_size]
+            chunks.append({
+                "chunk_index": c_idx,
+                "chunk_text": " ".join(chunk_words),
+                "token_count": len(chunk_words),
+                "page_number": 1,
+                "course_id": course_code,
+                "document_title": filename,
+                "doc_type": doc_type
+            })
+            start += (chunk_size - overlap)
+            c_idx += 1
 
     return {
         "filename": filename,
         "file_size": file_size,
         "course_code": course_code,
         "course_title": meta["title"],
+        "department": meta.get("department", "Computer Science"),
         "level": meta["level"],
         "semester": meta["semester"],
         "credit_units": meta["units"],

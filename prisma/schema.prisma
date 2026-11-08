@@ -1,0 +1,74 @@
+// Prisma Schema for CourseAware AI Academic RAG Platform
+// Database Provider: PostgreSQL / Supabase
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  lecturer
+  admin
+}
+
+enum DocType {
+  marking_scheme
+  past_question
+  lecture_note
+  handout
+}
+
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  name        String
+  role        Role      @default(student)
+  department  String
+  institution String?   @default("Higher Institution")
+  level       String?   // For students (e.g. "100", "200", "300", "400")
+  title       String?   // For lecturers (e.g. "Senior Lecturer & Examiner")
+  picture     String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  courses     Course[]  @relation("LecturerCourses")
+
+  @@map("users")
+}
+
+model Course {
+  id          String     @id @default(uuid())
+  code        String     @unique // e.g., CSC301, ECO101
+  title       String
+  department  String
+  level       Int?       @default(300)
+  semester    String?    @default("First Semester")
+  creditUnits Int?       @default(3) @map("credit_units")
+  
+  // Foreign Key to User (Lecturer)
+  lecturerId  String?    @map("lecturer_id")
+  lecturer    User?      @relation("LecturerCourses", fields: [lecturerId], references: [id], onDelete: SetNull)
+
+  // Relationships
+  documents   Document[]
+
+  @@map("courses")
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  courseId  String   @map("course_id")
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title     String
+  fileUrl   String   @map("file_url")
+  docType   DocType  @map("doc_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("documents")
+}

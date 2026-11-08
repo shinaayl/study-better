@@ -90,6 +90,9 @@ class AgentTools:
         if not q_record and question_text:
             sim_chunks = self.retriever.retrieve(query=question_text, top_k=1)
             doc_id = sim_chunks[0]["metadata"].get("document_id") if sim_chunks else None
+            source_file = sim_chunks[0]["metadata"].get("source_filename") if sim_chunks else None
+            retrieved_course = sim_chunks[0]["metadata"].get("course_code") if sim_chunks else None
+
             if doc_id:
                 cursor.execute("""
                 SELECT q.*, c.course_code, c.course_title 
@@ -103,6 +106,38 @@ class AgentTools:
                     q_record = dict(row)
                     cursor.execute("SELECT * FROM marking_scheme_criteria WHERE question_id = ?;", (q_record["question_id"],))
                     criteria_records = [dict(r) for r in cursor.fetchall()]
+
+            if not q_record and source_file:
+                cursor.execute("""
+                SELECT q.*, c.course_code, c.course_title 
+                FROM past_questions q
+                JOIN courses c ON q.course_id = c.course_id
+                JOIN examination_documents ed ON q.document_id = ed.document_id
+                WHERE ed.source_filename = ?
+                LIMIT 1;
+                """, (source_file,))
+                row = cursor.fetchone()
+                if row:
+                    q_record = dict(row)
+                    cursor.execute("SELECT * FROM marking_scheme_criteria WHERE question_id = ?;", (q_record["question_id"],))
+                    criteria_records = [dict(r) for r in cursor.fetchall()]
+
+            if not q_record and retrieved_course:
+                words = [w for w in re.findall(r"\b\w{4,}\b", question_text) if w.lower() not in ("describe", "explain", "what", "which", "about")]
+                for word in words:
+                    cursor.execute("""
+                    SELECT q.*, c.course_code, c.course_title 
+                    FROM past_questions q
+                    JOIN courses c ON q.course_id = c.course_id
+                    WHERE c.course_code = ? AND q.question_text LIKE ?
+                    LIMIT 1;
+                    """, (retrieved_course, f"%{word}%",))
+                    row = cursor.fetchone()
+                    if row:
+                        q_record = dict(row)
+                        cursor.execute("SELECT * FROM marking_scheme_criteria WHERE question_id = ?;", (q_record["question_id"],))
+                        criteria_records = [dict(r) for r in cursor.fetchall()]
+                        break
 
             if not q_record:
                 words = [w for w in re.findall(r"\b\w{4,}\b", question_text) if w.lower() not in ("describe", "explain", "what", "which", "about")]
@@ -122,15 +157,29 @@ class AgentTools:
                         break
 
         if not q_record:
-            # Default fallback question record
-            q_record = {
-                "question_id": str(uuid.uuid4()),
-                "course_code": "CSC 321",
-                "question_number": "Q1",
-                "total_marks": 10.0,
-                "question_text": question_text or "General Question",
-                "topic_tag": "General Computer Science Principles"
-            }
+            cursor.execute("""
+            SELECT q.*, c.course_code, c.course_title 
+            FROM past_questions q
+            JOIN courses c ON q.course_id = c.course_id
+            LIMIT 1;
+            """)
+            fallback_row = cursor.fetchone()
+            if fallback_row:
+                q_record = dict(fallback_row)
+            else:
+                q_record = {
+                    "question_id": str(uuid.uuid4()),
+                    "course_code": "CSC 321",
+                    "question_number": "Q1",
+                    "total_marks": 10.0,
+                    "question_text": question_text or "General Question",
+                    "topic_tag": "General Computer Science Principles"
+                }
+
+        cursor.execute("""
+        INSERT OR IGNORE INTO student_profiles (student_id, matric_number, full_name, email, current_level)
+        VALUES (?, ?, ?, ?, 400);
+        """, (student_id, student_id[:20], "Student User", f"{student_id[:10]}@cs.ui.edu.ng"))
 
         total_possible = float(q_record.get("total_marks", 10.0))
         if total_possible <= 0:
@@ -176,12 +225,16 @@ class AgentTools:
                     notes = f"Failed to demonstrate required examiner criteria. Expected focus on: {', '.join(missing[:3])}."
 
                 awarded_total += step_mark
+                marks_lost = round(max(0.0, alloc - step_mark), 1)
+                missing = [kw for kw in kws if kw not in matched_kws] if status != "FULL_CREDIT" else []
                 criteria_feedback.append({
                     "criterion": crit.get("criterion_step", "Key concept explanation"),
                     "allocated_marks": alloc,
                     "awarded_marks": step_mark,
+                    "marks_lost": marks_lost,
                     "status": status,
                     "matched_keywords": matched_kws,
+                    "missing_keywords": missing[:5],
                     "evaluator_note": notes
                 })
         else:
@@ -194,17 +247,21 @@ class AgentTools:
             else:
                 awarded_total = round(total_possible * 0.35, 1)
                 
+            marks_lost = round(max(0.0, total_possible - awarded_total), 1)
             criteria_feedback.append({
                 "criterion": "General technical clarity and correctness",
                 "allocated_marks": total_possible,
                 "awarded_marks": awarded_total,
+                "marks_lost": marks_lost,
                 "status": "PASS" if awarded_total >= (total_possible * 0.5) else "NEEDS_IMPROVEMENT",
                 "matched_keywords": [],
+                "missing_keywords": ["rigorous technical explanation", "domain terminology"] if marks_lost > 0 else [],
                 "evaluator_note": "Evaluated against institutional semantic similarity model."
             })
 
         awarded_total = min(total_possible, round(awarded_total, 1))
         percentage = round((awarded_total / total_possible) * 100, 1)
+        total_marks_lost = round(max(0.0, total_possible - awarded_total), 1)
 
         # Build qualitative feedback summary
         if percentage >= 75:
@@ -225,12 +282,16 @@ class AgentTools:
 
         # Log to evaluation_records
         eval_id = str(uuid.uuid4())
-        cursor.execute("""
-        INSERT INTO evaluation_records (evaluation_id, student_id, question_id, submitted_answer, awarded_marks, percentage_score, qualitative_feedback, criteria_breakdown)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """, (eval_id, student_id, q_record["question_id"], student_answer, awarded_total, percentage, qualitative, json.dumps(criteria_feedback)))
-        conn.commit()
-        conn.close()
+        try:
+            cursor.execute("""
+            INSERT INTO evaluation_records (evaluation_id, student_id, question_id, submitted_answer, awarded_marks, percentage_score, qualitative_feedback, criteria_breakdown)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            """, (eval_id, student_id, q_record["question_id"], student_answer, awarded_total, percentage, qualitative, json.dumps(criteria_feedback)))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        finally:
+            conn.close()
 
         return {
             "evaluation_id": eval_id,
@@ -239,6 +300,7 @@ class AgentTools:
             "question_number": q_record.get("question_number", "Q1"),
             "total_marks": total_possible,
             "awarded_marks": awarded_total,
+            "marks_lost": total_marks_lost,
             "percentage_score": percentage,
             "qualitative_feedback": qualitative,
             "criteria_breakdown": criteria_feedback

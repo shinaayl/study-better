@@ -1,0 +1,4 @@
+CSC 321 2023/2024
+EXAMINATION PAPER
+Question 1. (20 marks)
+Explain the difference between paging and segmentation in memory management.

@@ -1,13 +1,14 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api.routers import agent, courses, evaluation, analytics
+from backend.api.routers import agent, courses, evaluation, analytics, settings, auth, chat, feedback
 from backend.db.database import init_db
+import backend.config as cfg
 
 app = FastAPI(
-    title="CourseGPT API",
-    description="Course-Aware AI Study Agent for Computer Science Students at the University of Ibadan",
-    version="1.0.0"
+    title="Study Better API",
+    description="Study Better: Universal Multi-Department Course-Aware Revision & Rubric Evaluation Framework",
+    version="2.0.0"
 )
 
 # CORS Middleware configuration
@@ -20,10 +21,14 @@ app.add_middleware(
 )
 
 # Include API Routers
+app.include_router(chat.router)
 app.include_router(agent.router)
 app.include_router(courses.router)
 app.include_router(evaluation.router)
 app.include_router(analytics.router)
+app.include_router(settings.router)
+app.include_router(auth.router)
+app.include_router(feedback.router)
 
 @app.on_event("startup")
 def on_startup():
@@ -33,24 +38,25 @@ def on_startup():
 def health_check():
     return {
         "status": "healthy",
-        "system": "CourseGPT",
-        "institution": "University of Ibadan",
-        "department": "Computer Science"
+        "system": cfg.APP_NAME,
+        "institution": cfg.DEFAULT_INSTITUTION,
+        "department": cfg.DEFAULT_DEPARTMENT
     }
 
 @app.get("/api/info")
 def system_info():
     return {
-        "title": "CourseGPT: Course-Aware AI Study Agent",
-        "version": "1.0.0",
-        "session_coverage": "2019/2020 - 2023/2024 (5 Sessions)",
+        "title": f"{cfg.APP_NAME}: Multi-Department Course-Aware Revision Framework",
+        "version": "2.0.0",
+        "institution": cfg.DEFAULT_INSTITUTION,
         "features": [
-            "ReAct Reasoning Agent Loop",
-            "Dense RAG ChromaDB Retrieval",
-            "Automated Rubric Evaluation Engine",
-            "Mock Examination Generator",
-            "Topic Recurrence Heatmap & Overdue Predictor",
-            "Weak Area Diagnostic Tracker"
+            "ReAct Reasoning Agent Loop with Conversational Awareness",
+            "Dense RAG ChromaDB Retrieval with Strict Anti-Hallucination Guardrails",
+            "Universal Multi-Department Knowledge Base & Document Ingestion",
+            "Automated Rubric Evaluation Engine with Keyword Diagnostics",
+            "Authentic Mock Examination Generator",
+            "Topic Recurrence Heatmap & Overdue Statistical Predictor",
+            "Student Diagnostic & Weak Area Performance Tracker"
         ]
     }
 

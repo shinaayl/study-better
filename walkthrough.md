@@ -1,23 +1,22 @@
-# CourseGPT — Local Walkthrough & Demonstration Guide
+# AI Study Agent — Local Walkthrough & Demonstration Guide
 
-**Project Title:** Development of a Course-Aware AI Study Agent for Computer Science Students  
-**Institution:** Department of Computer Science, Faculty of Computing, University of Ibadan  
-**Session Coverage:** 2019/2020 – 2023/2024 (5 Academic Sessions)  
-**Author:** B.Sc. Final Year Computer Science Project  
+**Project Title:** Course-Aware AI Study Agent & Universal Exam Revision Framework  
+**Framework Scope:** Multi-Department Academic Corpus & Marking Scheme Evaluation Engine  
+**Author:** AI Study Agent Project  
 
 ---
 
 ## 1. System Overview
 
-CourseGPT addresses the critical limitation of commercial general-purpose LLMs (e.g., ChatGPT, Claude, Gemini), which possess **no institutional memory** and lack awareness of University of Ibadan departmental marking rubrics, examiner terminologies, and exam recurrence patterns.
+AI Study Agent addresses the critical limitation of commercial general-purpose LLMs (e.g., ChatGPT, Claude, Gemini), which possess **no institutional memory** and lack awareness of departmental marking rubrics, examiner terminologies, and exam recurrence patterns.
 
-The implementation consists of:
-1. **Relational-Vector Hybrid Store**: SQLite schema (normalised to 3NF across 9 tables) linked via UUID bridge pointers to ChromaDB embeddings.
-2. **Dense RAG Retrieval Pipeline**: Powered by the `all-MiniLM-L6-v2` embedding model with cosine similarity and institutional source citation generation.
-3. **ReAct Reasoning Agent**: Transparent `Thought -> Action -> Observation -> Final Answer` loop executing 5 autonomous tools.
+The framework consists of:
+1. **Universal Multi-Department Knowledge Base**: Ingest past examination papers, marking guides, and lecture materials for any university faculty (.docx, .doc, .pdf, .txt, .md).
+2. **Relational-Vector Hybrid Store**: SQLite schema (normalised to 3NF across 9 tables) linked via UUID bridge pointers to ChromaDB dense embeddings (`all-MiniLM-L6-v2`).
+3. **Conversational ReAct Agent & Anti-Hallucination Guardrails**: Handles greetings, identifies courses, and refuses to hallucinate unverified answers for courses not present in the institutional knowledge base.
 4. **Automated Rubric Evaluation Engine**: Point-by-point criterion checking, technical keyword matching, penalty rules, and score calculation.
 5. **Topic Recurrence Analytics & Overdue Predictor**: Visual frequency heatmap and statistical prediction of upcoming exam topics.
-6. **Mock Examination Generator**: Assembles practice papers styled after official UI B.Sc. Degree Examinations.
+6. **Mock Examination Generator**: Assembles practice papers styled after official university degree examinations.
 7. **Single-Page React Interface**: Clean, responsive frontend built with Vite, React 18, and Tailwind CSS.
 
 ---
@@ -106,9 +105,36 @@ python -m unittest discover -s tests -p "test_*.py"
 - View average scores, longitudinal attempt history, and flagged weak topics (where performance falls below 65%).
 - Read targeted study recommendations for weak areas.
 
+### 🛡️ 6. Quality Control & Anti-Hallucination Guardrails
+- **Conversational Greeting Interception**: Polite greetings and pleasantries (e.g., *"hi"*, *"hello"*, *"good morning"*) are answered immediately with conversational warmth and **zero** document chunk dumps (`sources: []`), preventing noisy syllabus retrieval.
+- **Unindexed Course Refusals**: Strict catalog verification prevents cross-curricular hallucinations when querying courses outside the university index (e.g., `BIO 999`), issuing a transparent refusal with enrolled course alternatives.
+- **Real-Time Faithfulness Auditing**: Calculates claim-grounding ratios against retrieved institutional context, classifying outputs as `LOW_RISK`, `MODERATE_RISK`, or `HIGH_RISK` and logging every query to SQLite `guardrail_logs`.
+
+### 👨‍🏫 7. Lecturer Feedback Loop & Exemplar Calibration (`Lecturer Portal` -> Quality Tab)
+- **Student & Lecturer Feedback**: In-chat rating (1–5 stars), hallucination flagging, and critique notes.
+- **Lecturer Calibration Modal**: Lecturers can inspect flagged student Q&As and supply gold-standard model solutions.
+- **Dynamic Vector Exemplar Calibration**: Submitted calibration solutions are automatically vectorized and upserted into ChromaDB (`lecturer_calibrated_exemplar`), immediately prioritizing lecturer-verified answers for all future queries.
+
 ---
 
-## 5. Offline Graceful Degradation
+## 5. Automated Verification & Test Coverage
+
+Run the comprehensive 41-test unit suite covering all 4 architectural steps:
+
+```bash
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+**Verification Highlights:**
+- **Step 1 (Auth & RBAC)**: Role validation (Lecturer/Student), Google OAuth simulation, student onboarding, and route protection.
+- **Step 2 (Lecturer Upload & Ingestion)**: Multi-format parsing (.docx, .doc, .pdf, .txt, .md), relational chunk tracking, and atomic rollback.
+- **Step 3 (RAG Chat, Citations & Math)**: SSE streaming, KaTeX rendering, institutional citations, and context length limits.
+- **Step 4 (Quality Control & Guardrails)**: Greeting interception, unindexed course refusal, factual grounding audit trail, and lecturer exemplar vector calibration.
+
+---
+
+## 6. Offline Graceful Degradation
 To run without external internet access or commercial LLM API keys:
 - The system operates autonomously using local ChromaDB vector search and the rule-based rubric evaluation engine.
-- If a `GEMINI_API_KEY` or `OPENAI_API_KEY` is placed in a `.env` file, CourseGPT automatically enhances natural language synthesis while retaining the exact institutional context.
+- If a `GEMINI_API_KEY` or `OPENAI_API_KEY` is placed in a `.env` file, AI Study Agent automatically enhances natural language synthesis while retaining the exact institutional context.
+

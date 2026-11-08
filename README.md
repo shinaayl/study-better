@@ -1,15 +1,15 @@
-# CourseGPT: Course-Aware AI Study Agent
+# AI Study Agent: Course-Aware Exam Revision & Evaluation Framework
 
-> **Development of a Course-Aware AI Study Agent for Computer Science Students**  
-> Niched to the Department of Computer Science, Faculty of Computing, University of Ibadan  
-> Final Year B.Sc. Computer Science Project (2024/2025 Session)
+> **Universal Multi-Department Academic Study Agent & Rubric Evaluation Engine**  
+> Grounded in authentic past examination papers, departmental marking schemes, and syllabus guides  
+> Built as an institutional framework customizable for any department and institution.
 
 ---
 
 ## Abstract
-Undergraduate examination preparation in Nigerian tertiary institutions relies heavily on past questions, but students increasingly consult general-purpose Large Language Models (LLMs) that lack institutional memory. Generic LLMs are blind to departmental marking rubrics, lecturer-preferred terminologies, and historical question patterns, yielding superficially fluent answers that diverge from examiners’ expectations.
+Undergraduate examination preparation relies heavily on past questions and marking guides, but students increasingly consult general-purpose Large Language Models (LLMs) that lack institutional memory. Generic LLMs are blind to departmental marking rubrics, lecturer-preferred terminologies, and historical question patterns, yielding superficially fluent answers that diverge from examiners’ expectations.
 
-**CourseGPT** grounds exam preparation in an authentic multi-session institutional corpus across core Computer Science courses (CSC 101 through CSC 583). Its architecture integrates a dense Retrieval-Augmented Generation (RAG) pipeline in ChromaDB with an agentic ReAct loop coordinating past question retrieval, rubric-grounded answer grading, mock exam generation, topic recurrence analytics, and weakness diagnostics.
+**AI Study Agent** grounds exam preparation in authentic multi-session institutional corpora. It is a universal framework that any department (Computer Science, Economics, Law, Engineering, Sciences, etc.) or university can deploy by uploading their course materials, past questions, and marking guides. Its architecture integrates a dense Retrieval-Augmented Generation (RAG) pipeline in ChromaDB with an agentic ReAct loop coordinating past question retrieval, rubric-grounded answer grading, mock exam generation, topic recurrence analytics, weakness diagnostics, and document ingestion.
 
 ---
 
@@ -37,6 +37,15 @@ Undergraduate examination preparation in Nigerian tertiary institutions relies h
    - Tracks longitudinal student attempts.
    - Flags vulnerable topics (< 65% average) and provides targeted study recommendations.
 
+6. **Anti-Hallucination Quality Guardrails**:
+   - Conversational greeting interception (zero document chunk dumps, `sources: []`).
+   - Catalog verification ensuring safe refusals when unindexed courses are queried.
+   - Grounding and faithfulness audit scores logged to SQLite `guardrail_logs`.
+
+7. **Lecturer Feedback Loop & Model Calibration**:
+   - Student and lecturer rating (1-5 stars) and hallucination reporting.
+   - Lecturer calibration workflow upserting gold-standard answers into ChromaDB (`lecturer_calibrated_exemplar`).
+
 ---
 
 ## Architecture & Technology Stack
@@ -61,15 +70,21 @@ Final_Year_Project/
 │   │   ├── schemas.py               # Pydantic schemas
 │   │   └── routers/
 │   │       ├── agent.py             # ReAct chat & mock exam endpoints
-│   │       ├── courses.py           # Catalog & past questions
+│   │       ├── auth.py              # RBAC & Google OAuth authentication
+│   │       ├── chat.py              # SSE Streaming RAG chat & citations
+│   │       ├── courses.py           # Catalog & document management
 │   │       ├── evaluation.py        # Rubric scoring & history
+│   │       ├── feedback.py          # Lecturer feedback & calibration
 │   │       └── analytics.py         # Heatmap & weak area tracking
 │   ├── agent/
 │   │   ├── agent.py                 # ReAct reasoning loop
+│   │   ├── guardrails.py            # Quality control & anti-hallucination engine
 │   │   ├── prompts.py               # Grounding & evaluation prompts
+│   │   ├── rag_query_engine.py      # Greeting interception & RAG query synthesis
 │   │   └── tools.py                 # 5 agent tools
 │   ├── pipeline/
-│   │   ├── doc_parser.py            # .docx and .doc structured parser
+│   │   ├── chunker.py               # Semantic chunking
+│   │   ├── doc_parser.py            # .docx, .doc, .pdf, .txt, .md structured parser
 │   │   ├── ingest.py                # Ingestion coordinator (DB + ChromaDB)
 │   │   ├── retriever.py             # Dense RAG retriever with citations
 │   │   └── vector_store.py          # ChromaDB manager
@@ -79,18 +94,19 @@ Final_Year_Project/
 │   └── requirements.txt             # Python dependencies
 ├── frontend/
 │   ├── src/
-│   │   ├── components/              # Chat, Evaluation, Heatmap, MockExam, Dashboard
-│   │   ├── services/api.js          # REST client
+│   │   ├── components/              # ChatInterface, EvaluationPortal, LecturerDashboard, etc.
+│   │   ├── services/api.js          # REST client with SSE streaming
 │   │   ├── App.jsx                  # Main interface
 │   │   └── index.css                # Tailwind styles
 │   ├── dist/                        # Production build
 │   └── package.json
 ├── final year pj data/              # 14 real UI CSC exam papers & marking guides
 ├── tests/
-│   ├── test_ingest.py               # Database integrity tests
-│   ├── test_retriever.py            # RAG latency & citation tests
-│   ├── test_agent_tools.py          # Tool invocation tests
-│   └── test_evaluation.py           # Rubric agreement tests
+│   ├── test_auth_rbac.py            # Step 1: RBAC & authentication
+│   ├── test_step2_lecturer_upload.py # Step 2: Upload & document management
+│   ├── test_step3_rag_chat.py       # Step 3: Streaming chat & citations
+│   ├── test_step4_quality_and_guardrails.py # Step 4: Quality & guardrails
+│   └── ...                          # Ingestion, retriever, tools & rubric evaluation
 ├── walkthrough.md                   # Complete local launch guide
 └── README.md
 ```
@@ -109,7 +125,7 @@ Open **`http://localhost:8000`** in your web browser.
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
-*(All 14 tests pass in ~4.6 seconds).*
+*(All 41 unit tests pass across all modules).*
 
 ---
 

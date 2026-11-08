@@ -1,9 +1,9 @@
 FINAL YEAR PROJECT 
 METHODOLOGY DEFENCE
-CourseGPT
+CourseAware AI Study Agent
 Development of A Course-Aware AI 
 Study Agent for University Students
-Niched to the Department of Computer Science, University of Ibadan
+A Universal Multi-Department Framework (Tested with Computer Science Test Cohort)
 2024/2025 Academic Session
 INTRODUCTION
 Most students depend on past questions for tests/examinations preparation and  use AI tools to get 
