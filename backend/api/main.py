@@ -2,8 +2,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import agent, courses, evaluation, analytics, settings, auth, chat, feedback
-from db.database import init_db
-import config as cfg
+from backend.db.database import init_db
+import backend.config as cfg
 
 app = FastAPI(
     title="Study Better API",
