@@ -1,8 +1,8 @@
 import os
 import chromadb
 from typing import List, Dict, Any, Optional
-from backend.config import CHROMA_DB_PATH
-from backend.pipeline.embeddings import compute_gemini_embeddings
+from config import CHROMA_DB_PATH
+from pipeline.embeddings import compute_gemini_embeddings
 
 class VectorStoreManager:
     def __init__(

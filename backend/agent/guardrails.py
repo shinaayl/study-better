@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 
-from backend.db.database import get_connection
+from db.database import get_connection
 
 COMMON_STOPWORDS = {
     "about", "above", "after", "again", "against", "all", "also", "among", "and", "another",

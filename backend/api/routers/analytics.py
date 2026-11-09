@@ -1,6 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter
-from backend.agent.tools import AgentTools
+from agent.tools import AgentTools
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 tools = AgentTools()

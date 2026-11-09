@@ -2,7 +2,7 @@ import os
 import math
 import hashlib
 from typing import List, Optional
-import backend.config as cfg
+import config as cfg
 
 EMBEDDING_DIM = 768
 GEMINI_EMBEDDING_MODEL = "text-embedding-004"

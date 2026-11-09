@@ -4,10 +4,10 @@ import json
 import logging
 from typing import Dict, Any, Optional, List
 from pathlib import Path
-from backend.config import DATA_DIR
-from backend.db.database import get_connection, init_db
-from backend.pipeline.doc_parser import parse_examination_document
-from backend.pipeline.vector_store import VectorStoreManager
+from config import DATA_DIR
+from db.database import get_connection, init_db
+from pipeline.doc_parser import parse_examination_document
+from pipeline.vector_store import VectorStoreManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -116,13 +116,13 @@ def ingest_parsed_document(parsed: Dict[str, Any], conn, vector_mgr: VectorStore
 
     # Ingest vectors into Vector Database with Google Gemini text-embedding-004
     if vector_docs:
-        from backend.pipeline.embeddings import compute_gemini_embeddings
+        from pipeline.embeddings import compute_gemini_embeddings
         gemini_embeddings = compute_gemini_embeddings(vector_docs)
         vector_mgr.add_chunks(vector_docs, vector_metas, vector_ids, embeddings=gemini_embeddings)
 
         # Optional PostgreSQL pgvector sync
         try:
-            from backend.pipeline.pgvector_manager import get_pgvector_manager
+            from pipeline.pgvector_manager import get_pgvector_manager
             pg_mgr = get_pgvector_manager()
             if pg_mgr.is_available():
                 pg_chunks = []

@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Generator
-from backend.config import SQLITE_DB_PATH
+from config import SQLITE_DB_PATH
 
 def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False, timeout=30.0)

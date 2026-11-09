@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Depends, Header, status
 from pydantic import BaseModel, EmailStr
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-import backend.config as cfg
-from backend.db.database import get_connection
+import config as cfg
+from db.database import get_connection
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication & RBAC"])
 

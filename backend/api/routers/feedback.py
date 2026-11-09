@@ -4,8 +4,8 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from backend.db.database import get_connection
-from backend.pipeline.vector_store import VectorStoreManager
+from db.database import get_connection
+from pipeline.vector_store import VectorStoreManager
 
 router = APIRouter(prefix="/api", tags=["Quality Control & Lecturer Feedback"])
 

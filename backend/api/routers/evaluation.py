@@ -1,8 +1,8 @@
 import json
 from fastapi import APIRouter
-from backend.agent.tools import AgentTools
-from backend.api.schemas import EvaluationSubmitRequest
-from backend.db.database import get_connection
+from agent.tools import AgentTools
+from api.schemas import EvaluationSubmitRequest
+from db.database import get_connection
 
 router = APIRouter(prefix="/api/evaluation", tags=["Evaluation"])
 tools = AgentTools()
