@@ -1,4 +1,7 @@
-const API_BASE = '/api';
+const rawBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim().replace(/\/+$/, '');
+const API_BASE = rawBaseUrl
+  ? (rawBaseUrl.endsWith('/api') ? rawBaseUrl : `${rawBaseUrl}/api`)
+  : '/api';
 
 export const api = {
   async getCourses() {
