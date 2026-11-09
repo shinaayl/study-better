@@ -3,10 +3,10 @@ import re
 import os
 import random
 from typing import Dict, List, Any, Optional
-from agent.tools import AgentTools
-from agent.prompts import REACT_SYSTEM_PROMPT, GROUNDED_QA_PROMPT
-import config as cfg
-from db.database import get_connection
+from backend.agent.tools import AgentTools
+from backend.agent.prompts import REACT_SYSTEM_PROMPT, GROUNDED_QA_PROMPT
+import backend.config as cfg
+from backend.db.database import get_connection
 
 class CourseAwareAgent:
     def __init__(self):

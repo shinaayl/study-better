@@ -1,9 +1,19 @@
 import os
+import sys
+from pathlib import Path
+
+# Ensure both project root and backend/ directory are on sys.path (supports Render + local IDE/tests)
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_PROJECT_ROOT = _BACKEND_DIR.parent
+for _p in (str(_PROJECT_ROOT), str(_BACKEND_DIR)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import agent, courses, evaluation, analytics, settings, auth, chat, feedback
-from db.database import init_db
-import config as cfg
+from backend.api.routers import agent, courses, evaluation, analytics, settings, auth, chat, feedback
+from backend.db.database import init_db
+import backend.config as cfg
 
 app = FastAPI(
     title="Study Better API",

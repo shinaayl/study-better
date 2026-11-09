@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
-from pipeline.vector_store import VectorStoreManager
-from config import MAX_RETRIEVAL_CHUNKS, SIMILARITY_THRESHOLD
+from backend.pipeline.vector_store import VectorStoreManager
+from backend.config import MAX_RETRIEVAL_CHUNKS, SIMILARITY_THRESHOLD
 
 class CourseRetriever:
     def __init__(self):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from agent.agent import CourseAwareAgent 
-from agent.tools import AgentTools
-from api.schemas import AgentQueryRequest, MockExamRequest
+from backend.agent.agent import CourseAwareAgent 
+from backend.agent.tools import AgentTools
+from backend.api.schemas import AgentQueryRequest, MockExamRequest
 
 router = APIRouter(prefix="/api/agent", tags=["Agent"])
 agent = CourseAwareAgent()

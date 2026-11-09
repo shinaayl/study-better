@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import json
 
-from agent.rag_query_engine import RAGQueryEngine
+from backend.agent.rag_query_engine import RAGQueryEngine
 
 router = APIRouter(prefix="/api/chat", tags=["Chat & RAG Query"])
 rag_engine = RAGQueryEngine()

@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from pydantic import BaseModel
-from db.database import get_connection
-from pipeline.ingest import ingest_document_file
-from config import PERSIST_DIR
-from api.routers.auth import get_current_user, require_role
+from backend.db.database import get_connection
+from backend.pipeline.ingest import ingest_document_file
+from backend.config import PERSIST_DIR
+from backend.api.routers.auth import get_current_user, require_role
 
 router = APIRouter(prefix="/api/courses", tags=["Courses"])
 
@@ -341,7 +341,7 @@ def delete_document(document_id: str, current_user: Optional[Dict[str, Any]] = D
     
     if embedding_ids:
         try:
-            from pipeline.vector_store import VectorStoreManager
+            from backend.pipeline.vector_store import VectorStoreManager
             vm = VectorStoreManager()
             vm.collection.delete(ids=embedding_ids)
         except Exception as e:

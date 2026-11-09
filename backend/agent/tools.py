@@ -2,8 +2,8 @@ import json
 import uuid
 import re
 from typing import Dict, List, Any, Optional
-from db.database import get_connection
-from pipeline.retriever import CourseRetriever
+from backend.db.database import get_connection
+from backend.pipeline.retriever import CourseRetriever
 
 class AgentTools:
     def __init__(self):

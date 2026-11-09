@@ -6,11 +6,11 @@ import random
 from typing import List, Dict, Any, Optional, AsyncGenerator, Generator
 from dotenv import load_dotenv
 
-import config as cfg
-from db.database import get_connection
-from pipeline.embeddings import compute_gemini_embeddings, GEMINI_EMBEDDING_MODEL
-from pipeline.vector_store import VectorStoreManager
-from agent.guardrails import QualityGuardrailEngine
+import backend.config as cfg
+from backend.db.database import get_connection
+from backend.pipeline.embeddings import compute_gemini_embeddings, GEMINI_EMBEDDING_MODEL
+from backend.pipeline.vector_store import VectorStoreManager
+from backend.agent.guardrails import QualityGuardrailEngine
 
 load_dotenv()
 

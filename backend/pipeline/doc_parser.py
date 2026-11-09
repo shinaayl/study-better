@@ -272,7 +272,7 @@ def parse_examination_document(file_path: str, metadata_override: Optional[Dict[
 
     # 5. Semantic Document Chunking (Exact 800 tokens, 150 token overlap with page awareness)
     try:
-        from pipeline.chunker import extract_pages, chunk_text_overlapping
+        from backend.pipeline.chunker import extract_pages, chunk_text_overlapping
         pages = extract_pages(file_path)
         chunks = chunk_text_overlapping(
             pages,
