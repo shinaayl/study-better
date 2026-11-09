@@ -1,4 +1,5 @@
-const rawBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '').trim().replace(/\/+$/, '');
+const defaultBackend = import.meta.env.PROD ? 'https://study-better.onrender.com' : '';
+const rawBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || defaultBackend).trim().replace(/\/+$/, '');
 const API_BASE = rawBaseUrl
   ? (rawBaseUrl.endsWith('/api') ? rawBaseUrl : `${rawBaseUrl}/api`)
   : '/api';
