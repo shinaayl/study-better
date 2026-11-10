@@ -62,10 +62,9 @@ export default function TopBar({
       {/* Right: Continuous Lecturer Learning Indicator & User Profile Trigger */}
       <div className="flex items-center space-x-3 text-xs">
         {/* Continuous Lecturer Learning Active Badge */}
-        <div className="hidden lg:flex items-center space-x-1.5 bg-purple-50 text-purple-900 border border-purple-200 px-3 py-1 rounded-full text-[11px] font-semibold">
-          <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse"></span>
-          <span>Continuous Lecturer Learning: Active</span>
-          <span className="text-purple-400">({totalCoursesCount || 15} Courses)</span>
+        <div className="hidden lg:flex items-center space-x-1.5 bg-purple-50 text-purple-900 border border-purple-200 px-3 py-1 rounded-full text-[11px] font-semibold shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Continuous Lecturer Learning Active</span>
         </div>
 
         {/* Instant Role Toggle Pill - ONLY FOR VERIFIED FACULTY / LECTURER ACCOUNTS */}

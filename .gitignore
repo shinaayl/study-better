@@ -20,3 +20,7 @@ yarn-error.log*
 # Temporary build outputs
 # dist/ is included so single-command python launcher serves frontend immediately
 build/
+
+.vercel
+.env*
+~$*

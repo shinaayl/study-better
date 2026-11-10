@@ -163,11 +163,11 @@ class CourseAwareAgent:
         if not chunks:
             c_tag = f"for **{course_code}**" if course_code else "in the verified course materials"
             return (
-                f"### 🛡️ No Verified Departmental Materials Found\n\n"
-                f"I am sorry, but I do not have the answer to that question {c_tag}.\n\n"
+                f"### 🛡️ No Information Found in Verified Materials\n\n"
+                f"I am sorry, but I do not have information about that question {c_tag}.\n\n"
                 f"**Anti-Hallucination Policy:**\n"
-                f"To maintain academic integrity and prevent misinformation, Study Better only provides answers strictly grounded in official materials uploaded by your departmental lecturers. "
-                f"If you are asking about a specific course, please mention the course code (e.g. `ECO 101`, `LAW 201`, `CSC 321`) or have your course lecturer upload the syllabus and marking scheme in the Ingestion Portal."
+                f"To maintain academic integrity and prevent misinformation, Study Better only provides answers strictly grounded in official materials uploaded by course lecturers. "
+                f"Study Better learns automatically from lecturers' input: once a lecturer uploads the relevant syllabus materials, past examination questions, or marking schemes, I will automatically learn from them and answer questions on that topic."
             )
 
         top_chunk = chunks[0]
@@ -300,49 +300,30 @@ class CourseAwareAgent:
         )) or q_lower in ["help", "who are you", "what can you do", "features", "introduce yourself"]
 
         if is_capabilities_query:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT course_code, course_title, department FROM courses ORDER BY department, course_code;")
-            all_courses = [dict(r) for r in cursor.fetchall()]
-            conn.close()
-
-            by_dept = {}
-            for c in all_courses:
-                dept = c.get("department") or "General Studies"
-                by_dept.setdefault(dept, []).append(f"`{c['course_code']}` ({c['course_title']})")
-
-            courses_summary = ""
-            for dept, clist in by_dept.items():
-                courses_summary += f"- **{dept}**: " + ", ".join(clist[:4])
-                if len(clist) > 4:
-                    courses_summary += f" *(+{len(clist)-4} more)*"
-                courses_summary += "\n"
-
             cap_answer = (
                 "### 👋 Study Better AI Agent Capabilities\n\n"
-                "I am a universal, course-aware revision and examination preparation assistant built for higher institutions. Any academic department can upload past questions, marking schemes, and syllabus notes so students can study with grounded, reliable answers.\n\n"
+                "I am a universal, course-aware revision and examination preparation assistant built for higher institutions. I help students prepare for coursework and semester examinations with verified, reliable answers grounded in official materials.\n\n"
                 "#### 🎯 Key Features:\n"
                 "- **Grounded Past Question Q&A**: Ask any conceptual or past examination question, answered strictly using official departmental marking schemes.\n"
-                "- **Automated Rubric Scoring**: Submit your draft answers in the Rubric Scoring portal to get instant mark-by-mark grading and keyword feedback.\n"
+                "- **Automated Rubric Scoring**: Submit draft answers in the Rubric Scoring portal to get instant mark-by-mark grading and keyword feedback.\n"
                 "- **Authentic Mock Exams**: Generate custom practice examination papers matching real degree exam structures.\n"
                 "- **Topic Recurrence Heatmap**: Review which topics appear most frequently across sessions and see statistical overdue probabilities.\n"
-                "- **Multi-Department Support**: Lecturers and administrators can upload any department's course materials in the Lecturer Ingestion portal.\n\n"
-                f"#### 📚 Ingested Departmental Courses:\n{courses_summary}\n"
-                "> 💡 *Tip: Feel free to ask any question about these courses or select one from the top bar to begin!*"
+                "- **Continuous Lecturer Learning**: Lecturers and course examiners can upload syllabi, past papers, and calibrate answers in the Lecturer Studio. I automatically learn from lecturer input and prioritize official exemplars over baseline data.\n\n"
+                "> 💡 *Tip: Feel free to ask any question about your courses, past papers, or exam syllabus to begin!*"
             )
 
             return {
                 "query": query,
                 "course_code": course_code or "ALL_COURSES",
                 "trace": [{
-                    "thought": "The user explicitly asked what I can do or requested help. I will provide a structured overview of all features and available courses.",
+                    "thought": "The user inquired about agent capabilities. I provided a clear overview of grounded study tools and continuous lecturer learning.",
                     "action": "explain_capabilities",
                     "action_input": {"intent": "capabilities"},
-                    "observation": f"Displayed capabilities and catalog of {len(all_courses)} courses."
+                    "observation": "Displayed agent capabilities without exposing internal course lists."
                 }],
                 "final_answer": cap_answer,
                 "citations": ["[Study Better Framework]"],
-                "tool_data": {"type": "capabilities", "courses_count": len(all_courses)}
+                "tool_data": {"type": "capabilities"}
             }
 
         # 4. COURSE CODE DETECTION & ANTI-HALLUCINATION VERIFICATION
@@ -360,21 +341,14 @@ class CourseAwareAgent:
             c_found = cursor.fetchone()
 
             if not c_found:
-                cursor.execute("SELECT course_code, course_title, department FROM courses ORDER BY course_code LIMIT 8;")
-                sample_courses = [dict(r) for r in cursor.fetchall()]
                 conn.close()
-
-                c_list_str = "\n".join([f"- **{c['course_code']}**: {c['course_title']} ({c['department']})" for c in sample_courses])
-
                 unknown_answer = (
-                    f"### ⚠️ Course Not Found in Knowledge Base: `{detected_code}`\n\n"
-                    f"I currently do not have verified course materials, past examination questions, or marking schemes for **{detected_code}** in my repository.\n\n"
-                    f"**🛡️ Anti-Hallucination Policy:**\n"
-                    "As an authentic study agent, I refuse to fabricate or guess ungrounded answers when official departmental documents are not present.\n\n"
-                    "#### 📤 How to add this course:\n"
-                    f"You or your department can upload past questions, marking schemes, or lecture notes for **{detected_code}** in the **Knowledge Base & Ingestion** tab! The system will automatically index them for grounded Q&A, mock exams, and rubric grading.\n\n"
-                    f"#### 📖 Available Courses You Can Ask About:\n"
-                    f"{c_list_str}\n"
+                    f"### 🛡️ Course Not Found in Knowledge Base: `{detected_code}`\n\n"
+                    f"I do not have verified course materials, past examination questions, or marking schemes for **{detected_code}** in my repository.\n\n"
+                    f"**Anti-Hallucination Policy:**\n"
+                    "To maintain academic integrity and prevent misinformation, Study Better strictly refuses to guess or fabricate answers when official departmental materials are not present.\n\n"
+                    "#### 📤 Automatic Learning from Lecturers:\n"
+                    f"Once a course lecturer or examiner uploads the syllabus, past questions, or marking schemes for **{detected_code}** in the Ingestion Portal, I will automatically learn from them and provide grounded solutions."
                 )
 
                 return {
@@ -384,7 +358,7 @@ class CourseAwareAgent:
                         "thought": f"The student inquired about {detected_code}. I verified with the database catalog that no materials exist for this course.",
                         "action": "verify_course_catalog",
                         "action_input": {"course_code": detected_code},
-                        "observation": f"Course {detected_code} is absent from knowledge base. Enforcing anti-hallucination response."
+                        "observation": f"Course {detected_code} is absent from knowledge base. Enforcing anti-hallucination response without dumping course catalog."
                     }],
                     "final_answer": unknown_answer,
                     "citations": [],
@@ -399,12 +373,6 @@ class CourseAwareAgent:
         # 3. INTENT RECOGNITION (ReAct Pattern)
         if any(w in q_lower for w in ["mock exam", "mock", "practice exam", "practice test", "generate exam", "sample paper"]):
             if not course_code:
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute("SELECT course_code, course_title FROM courses LIMIT 8;")
-                available = [dict(r) for r in cursor.fetchall()]
-                conn.close()
-                course_list = ", ".join([f"`{c['course_code']}`" for c in available])
                 return {
                     "query": query,
                     "course_code": "UNSPECIFIED",
@@ -415,8 +383,8 @@ class CourseAwareAgent:
                         "observation": "Prompted user for course code."
                     }],
                     "final_answer": (
-                        f"Which course would you like to generate a practice mock exam for? (Available: {course_list}). "
-                        "Simply ask for example: *\"Generate a mock exam for CSC 321\"* or *\"Give me a mock exam for ECO 101\"*."
+                        "Which course would you like to generate a practice mock exam for? "
+                        "Please specify your course code, for example: *\"Generate a mock exam for CSC 321\"*."
                     ),
                     "citations": [],
                     "tool_data": {"type": "prompt_course_selection"}
@@ -447,12 +415,6 @@ class CourseAwareAgent:
 
         elif any(w in q_lower for w in ["heatmap", "frequency", "likely to appear", "likely", "overdue", "topic trends", "recurrence"]):
             if not course_code:
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute("SELECT course_code, course_title FROM courses LIMIT 8;")
-                available = [dict(r) for r in cursor.fetchall()]
-                conn.close()
-                course_list = ", ".join([f"`{c['course_code']}`" for c in available])
                 return {
                     "query": query,
                     "course_code": "UNSPECIFIED",
@@ -462,7 +424,7 @@ class CourseAwareAgent:
                         "action_input": {"query": q_clean},
                         "observation": "Prompted user for course code."
                     }],
-                    "final_answer": f"Which course would you like to view the topic recurrence heatmap for? (Available: {course_list}). For example: *\"Show topic heatmap for CSC 321\"*.",
+                    "final_answer": "Which course would you like to view the topic recurrence heatmap for? Please specify the course code, for example: *\"Show topic heatmap for CSC 321\"*.",
                     "citations": [],
                     "tool_data": {"type": "prompt_course_selection"}
                 }

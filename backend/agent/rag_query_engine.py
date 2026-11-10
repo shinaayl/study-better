@@ -19,7 +19,8 @@ Your mission is to provide rigorous, pedagogically sound, and institutionally al
 
 ### STRICT OPERATIONAL DIRECTIVES:
 1. **Greetings, Introductions & Meta-Questions**:
-   - If the user is simply greeting you, introducing themselves, or asking how you work, respond warmly, politely, and briefly as an academic tutor. Offer to help them with specific past questions, course concepts, or exam preparations for their selected course without dumping course data unprompted.
+   - If the user is simply greeting you, introducing themselves, or asking how you work, respond warmly, politely, and briefly as an academic tutor. Just welcome users and let them use the assistant.
+   - Do NOT show or dump a list of the courses you know. Let students ask whatever topic or question they want to study.
    - Do NOT reference retrieved context chunks or dump course data when responding to greetings or pleasantries.
 
 2. **Institutional Grounding & Context Usage**:
@@ -37,15 +38,15 @@ Your mission is to provide rigorous, pedagogically sound, and institutionally al
 4. **Citations**:
    - Reference the retrieved documents where appropriate (e.g., *[CSC 321 · 2022/2023 · Marking Scheme · Page 2]*). Do NOT invent citations when no documents are retrieved or when answering conversational greetings.
 
-5. **Anti-Hallucination, Zero-Tolerance for Unknowns & Course Independence**:
-   - DO NOT GIVE AN ANSWER TO WHAT YOU DO NOT KNOW. JUST TELL THE USER YOU DONT HAVE INFORMATION ABOUT IT.
-   - If the verified context does not contain information about the student's question, you MUST politely state: "I don't have information about that in the verified course materials."
+5. **Anti-Hallucination, Zero-Tolerance for Unknowns & Automatic Lecturer Learning**:
+   - DO NOT HALLUCINATE OR GUESS. DO NOT GIVE AN ANSWER TO WHAT YOU DO NOT KNOW.
+   - If the verified context does not contain information about the student's question, you MUST clearly state: "I don't have information about that in the verified course materials."
    - Do NOT guess, speculate, extrapolate, or use outside training data when the information is missing from the verified materials.
-   - Refuse to fabricate solutions for unindexed courses not present in the departmental index.
+   - DO NOT SHOW OR LIST THE COURSES YOU KNOW. Under no circumstances output a list of courses the agent knows.
    - NEVER reference, introduce, or mention an unrelated course code, title, or department when you do not have information. If the student asks about a topic not found in verified materials (e.g. general questions about chess, sports, cooking, etc.), simply state that you do not have information about that topic without referencing any course.
    - Only reference a course code if the student explicitly asked about that specific course in their message.
    - Do NOT begin your response with robotic self-introductions (such as "Hello! I am your Study Better AI Agent for..."). Answer the student directly, naturally, and warmly like a standard modern LLM.
-   - Clarify that you only answer questions based on documents and syllabus materials uploaded by course lecturers, and will provide answers once a lecturer uploads relevant syllabus materials or past papers.
+   - Clarify that you only answer questions based on official documents and syllabus materials uploaded by course lecturers, and automatically learn from lecturers' input: once a lecturer uploads relevant syllabus materials, past papers, or marking guides, you will be able to answer questions on that topic.
 
 6. **Continuous Lecturer Learning & Test Data Supersession**:
    - Initial database materials are baseline test data.
@@ -807,13 +808,13 @@ Provide an authoritative, clear, and comprehensive response following the direct
                 refusal_text = (
                     f"I don't have information about that question for {explicit_code} in the verified course materials.\n\n"
                     "To maintain academic integrity and prevent misinformation, I only provide answers directly grounded in official past examination papers, lecture notes, and marking schemes uploaded by course lecturers. "
-                    f"Once your lecturer uploads the materials or marking guide for {explicit_code}, I will be able to answer questions and break down solutions for it."
+                    f"Study Better automatically learns from lecturers' input: once your lecturer uploads the materials or marking guide for {explicit_code}, I will automatically learn from them and will be able to answer questions and break down solutions for it."
                 )
             else:
                 refusal_text = (
                     "I don't have information about that in the verified course materials.\n\n"
                     "To maintain academic integrity and prevent misinformation, I only provide answers directly grounded in official past examination papers, lecture notes, and marking schemes uploaded by course lecturers. "
-                    "Once a lecturer uploads the relevant lecture notes, syllabus materials, or marking schemes into Study Better, I will be able to answer questions and break down solutions on that topic."
+                    "Study Better automatically learns from lecturers' input: once a lecturer uploads relevant lecture notes, syllabus materials, or marking schemes, I will automatically learn from them and will be able to answer questions and break down solutions on that topic."
                 )
             words = refusal_text.split(" ")
             chunk_buf = []
@@ -828,20 +829,6 @@ Provide an authoritative, clear, and comprehensive response following the direct
             guardrail_res = self.guardrail_engine.audit_query_and_response(
                 query=student_message,
                 course_code=explicit_code or None,
-                retrieved_chunks=[],
-                response_text=refusal_text
-            )
-            guardrail_res["hallucination_risk"] = "LOW_RISK"
-            guardrail_res["guardrail_action"] = "REFUSAL_ENFORCED"
-            guardrail_res["faithfulness_score"] = 1.0
-
-            yield f"data: {json.dumps({'event': 'guardrail', 'guardrail': guardrail_res})}\n\n"
-            yield f"data: {json.dumps({'event': 'done', 'full_text': refusal_text, 'sources_count': 0, 'guardrail': guardrail_res})}\n\n"
-            return
-
-            guardrail_res = self.guardrail_engine.audit_query_and_response(
-                query=student_message,
-                course_code=course_code,
                 retrieved_chunks=[],
                 response_text=refusal_text
             )
@@ -934,10 +921,10 @@ Provide an authoritative, clear, and comprehensive response following the direct
         if not chunks:
             c_info = f" for **{course_code}**" if course_code else ""
             return (
-                f"### Institutional Repository Notice\n\n"
+                f"### 🛡️ Institutional Repository Notice\n\n"
                 f"I don't have information for that question{c_info} in the verified course materials.\n\n"
-                f"To maintain academic integrity and prevent misinformation, I only answer questions that are directly grounded in your department's uploaded past papers, lecture notes, and marking schemes. "
-                f"If this topic is part of your syllabus, please ask your lecturer to upload the relevant lecture notes or marking guide into Study Better."
+                f"To maintain academic integrity and prevent misinformation, I only answer questions that are directly grounded in official materials uploaded by course lecturers. "
+                f"Study Better automatically learns from lecturers' input: once a lecturer uploads the relevant lecture notes, syllabus materials, or marking guide, I will automatically learn from them and will be able to answer questions on that topic."
             )
 
         # Extract technical content from chunks

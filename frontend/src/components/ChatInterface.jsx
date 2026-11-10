@@ -411,12 +411,12 @@ export default function ChatInterface({ currentUser, initialPrompt, selectedCour
   };
 
   const getPromptSuggestions = () => [
-    { title: "Operating Systems (CSC 321)", prompt: "Explain fixed partitions and internal fragmentation in CSC 321" },
-    { title: "Cybersecurity Threats (CSC 583)", prompt: "What are the primary categories of security threats examined in CSC 583?" },
-    { title: "Scientific Computing (CSC 231)", prompt: "Compare Trapezoidal rule and Simpson's 1/3 rule with formulas in CSC 231" },
-    { title: "Digital Logic (CSC 222)", prompt: "Explain error detection and parity bit generation in CSC 222" },
-    { title: "Software Engineering (CSC 472)", prompt: "What are the stages of the Software Development Life Cycle in CSC 472?" },
-    { title: "Greeting & Orientation", prompt: "Hello! What can you help me study and how does your rubric grading work?" }
+    { title: "Break Down a Concept", prompt: "Explain a difficult concept from my syllabus step-by-step with clear definitions and practical examples." },
+    { title: "Exam Answer Structure", prompt: "How should I structure my answers in semester examinations to achieve full marks based on marking schemes?" },
+    { title: "Practice Exam Question", prompt: "Give me an examination-style practice question and guide me through the key marking criteria." },
+    { title: "Formula & Derivation Steps", prompt: "Walk me through how to approach mathematical derivations and calculations step-by-step." },
+    { title: "Compare & Contrast Topics", prompt: "Compare and contrast two related technical concepts, detailing their core trade-offs and applications." },
+    { title: "Marking Scheme Orientation", prompt: "Hello! How does your marking rubric grading work and how do you learn from lecturers?" }
   ];
 
   const firstName = currentUser?.name?.split(' ')[0] || 'Scholar';
@@ -432,17 +432,15 @@ export default function ChatInterface({ currentUser, initialPrompt, selectedCour
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <GraduationCap className="w-4 h-4 text-purple-600" />
-            <span className="font-bold text-xs text-slate-900">Agent Memory:</span>
+            <span className="font-bold text-xs text-slate-900">Study Agent:</span>
           </div>
 
           <div className="inline-flex items-center space-x-2 bg-purple-50/80 border border-purple-200/80 rounded-xl px-3 py-1 text-xs text-purple-950 font-medium">
             <Layers className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-            <span>
-              {courses.length > 0 ? `${courses.length} Courses Indexed` : 'Department Archive Connected'}
-            </span>
+            <span>Institutional Knowledge Base Connected</span>
             <span className="text-purple-300">|</span>
             <span className="text-[11px] text-purple-700 hidden sm:inline">
-              Auto-updates as lecturers upload data
+              Auto-learns from lecturer input
             </span>
           </div>
         </div>
@@ -451,7 +449,7 @@ export default function ChatInterface({ currentUser, initialPrompt, selectedCour
         <div className="flex items-center space-x-2 shrink-0">
           <div className="flex items-center space-x-1.5 text-[11px] text-purple-800 bg-purple-50 border border-purple-200/80 px-2.5 py-1 rounded-full font-medium">
             <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-            <span className="hidden sm:inline">Grounded in UI Past Questions</span>
+            <span className="hidden sm:inline">Verified Past Papers & Rubrics</span>
             <span className="sm:hidden">Grounded</span>
           </div>
           {messages.length > 0 && (
@@ -477,37 +475,33 @@ export default function ChatInterface({ currentUser, initialPrompt, selectedCour
 
             <div className="space-y-1.5">
               <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                Welcome back, <span className="text-purple-700">{firstName}</span>
+                Welcome, <span className="text-purple-700">{firstName}</span>!
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
-                Ask any question across your departmental courses, past examination papers, or marking schemes. 
-                The agent seamlessly references its institutional memory and updates dynamically as lecturers upload data.
+                Ask any question across your university courses, past examination papers, or marking schemes. 
+                I deliver verified, grounded explanations and automatically learn as lecturers upload syllabus materials.
               </p>
             </div>
 
-            {/* Agent Unified Memory Card */}
-            <div className="w-full bg-white border border-purple-200/80 rounded-2xl p-3.5 text-left shadow-2xs flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold shrink-0">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-xs text-purple-900">Unified Institutional Memory</span>
-                    <span className="text-[10px] text-purple-300">·</span>
-                    <span className="text-xs text-slate-600">{courses.length} courses loaded</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    {courses.slice(0, 5).map(c => c.course_code).join(', ')}{courses.length > 5 ? `, +${courses.length - 5} more` : ''} · Synchronized live with lecturer uploads
-                  </p>
-                </div>
+            {/* Anti-Hallucination & Active Learning Assurance Card */}
+            <div className="w-full bg-white border border-purple-200/80 rounded-2xl p-4 text-left shadow-2xs flex items-center space-x-3.5">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold shrink-0">
+                <ShieldCheck className="w-5 h-5 text-purple-700" />
               </div>
-              <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold border border-emerald-200 shrink-0">
-                ● Memory Live
-              </span>
+              <div className="text-xs space-y-0.5">
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-xs text-purple-950">Grounded & Zero-Hallucination</span>
+                  <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                    ● Active
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  I only answer from verified course materials. If I don't have information about a topic, I will let you know instead of guessing. As lecturers upload new materials, I automatically learn from them.
+                </p>
+              </div>
             </div>
 
-            {/* Course-Specific Prompt Suggestions (White and Light Purple Cards) */}
+            {/* Student Study Prompt Suggestions (White and Light Purple Cards) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full text-left pt-1">
               {getPromptSuggestions().map((item, idx) => (
                 <button
@@ -646,11 +640,7 @@ export default function ChatInterface({ currentUser, initialPrompt, selectedCour
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={
-              activeCourseCode
-                ? `Ask about ${activeCourseCode} past questions, marking schemes, formulas, or concepts...`
-                : "Ask about any university course, past exam question, or marking scheme..."
-            }
+            placeholder="Ask any exam question, syllabus topic, or past paper problem..."
             className="flex-1 bg-transparent px-3 py-2 text-xs sm:text-sm text-purple-950 placeholder-purple-300 focus:outline-none resize-none max-h-32 leading-relaxed"
             disabled={loading}
           />
